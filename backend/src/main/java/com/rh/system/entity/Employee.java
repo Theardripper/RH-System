@@ -2,8 +2,6 @@ package com.rh.system.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.Transient;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
