@@ -1,15 +1,16 @@
 package com.rh.system.service;
 
-import com.hrSystem.hr.dto.request.VacationRequestDto;
-import com.hrSystem.hr.dto.response.PageResponse;
-import com.hrSystem.hr.dto.response.VacationResponse;
-import com.hrSystem.hr.entity.Employee;
-import com.hrSystem.hr.entity.User;
-import com.hrSystem.hr.entity.VacationRequest;
-import com.hrSystem.hr.entity.VacationStatus;
-import com.hrSystem.hr.exception.BusinessException;
-import com.hrSystem.hr.exception.ResourceNotFoundException;
-import com.hrSystem.hr.repository.VacationRequestRepository;
+
+import com.rh.system.dto.request.VacationRequestDto;
+import com.rh.system.dto.response.PageResponse;
+import com.rh.system.dto.response.VacationResponse;
+import com.rh.system.entity.Employee;
+import com.rh.system.entity.User;
+import com.rh.system.entity.VacationRequest;
+import com.rh.system.entity.VacationStatus;
+import com.rh.system.exception.BusinessException;
+import com.rh.system.exception.ResourceNotFoundException;
+import com.rh.system.repository.VacationRequestRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

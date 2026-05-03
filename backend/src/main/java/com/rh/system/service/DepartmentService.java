@@ -1,12 +1,13 @@
 package com.rh.system.service;
 
-import com.hrSystem.hr.dto.request.DepartmentRequest;
-import com.hrSystem.hr.dto.response.DepartmentResponse;
-import com.hrSystem.hr.dto.response.PageResponse;
-import com.hrSystem.hr.entity.Department;
-import com.hrSystem.hr.exception.ConflictException;
-import com.hrSystem.hr.exception.ResourceNotFoundException;
-import com.hrSystem.hr.repository.DepartmentRepository;
+
+import com.rh.system.dto.request.DepartmentRequest;
+import com.rh.system.dto.response.DepartmentResponse;
+import com.rh.system.dto.response.PageResponse;
+import com.rh.system.entity.Department;
+import com.rh.system.exception.ConflictException;
+import com.rh.system.exception.ResourceNotFoundException;
+import com.rh.system.repository.DepartmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

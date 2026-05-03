@@ -1,7 +1,7 @@
 package com.rh.system.repository;
 
-import com.hrSystem.hr.entity.VacationRequest;
-import com.hrSystem.hr.entity.VacationStatus;
+import com.rh.system.entity.VacationRequest;
+import com.rh.system.entity.VacationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,14 +1,15 @@
 package com.rh.system.service;
 
-import com.hrSystem.hr.dto.request.EmployeeRequest;
-import com.hrSystem.hr.dto.response.EmployeeResponse;
-import com.hrSystem.hr.dto.response.PageResponse;
-import com.hrSystem.hr.entity.Department;
-import com.hrSystem.hr.entity.Employee;
-import com.hrSystem.hr.exception.BusinessException;
-import com.hrSystem.hr.exception.ConflictException;
-import com.hrSystem.hr.exception.ResourceNotFoundException;
-import com.hrSystem.hr.repository.EmployeeRepository;
+
+import com.rh.system.dto.request.EmployeeRequest;
+import com.rh.system.dto.response.EmployeeResponse;
+import com.rh.system.dto.response.PageResponse;
+import com.rh.system.entity.Department;
+import com.rh.system.entity.Employee;
+import com.rh.system.exception.BusinessException;
+import com.rh.system.exception.ConflictException;
+import com.rh.system.exception.ResourceNotFoundException;
+import com.rh.system.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class EmployeeService {
 
-    private final EmployeeRepository  employeeRepository;
+    private final EmployeeRepository employeeRepository;
     private final DepartmentService   departmentService;
 
     // ----------------------------------------------------------------

@@ -1,6 +1,7 @@
 package com.rh.system.repository;
 
-import com.hrSystem.hr.entity.Department;
+
+import com.rh.system.entity.Department;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
