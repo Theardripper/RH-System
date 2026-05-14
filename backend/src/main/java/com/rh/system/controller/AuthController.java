@@ -4,6 +4,7 @@ package com.rh.system.controller;
 import com.rh.system.dto.request.LoginRequest;
 import com.rh.system.dto.request.RegisterRequest;
 import com.rh.system.dto.response.AuthResponse;
+import com.rh.system.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

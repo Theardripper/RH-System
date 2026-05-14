@@ -1,15 +1,15 @@
 package com.rh.system.service;
 
-import com.hrSystem.hr.dto.request.LoginRequest;
-import com.hrSystem.hr.dto.request.RegisterRequest;
-import com.hrSystem.hr.dto.response.AuthResponse;
-import com.hrSystem.hr.entity.Employee;
-import com.hrSystem.hr.entity.User;
-import com.hrSystem.hr.exception.ConflictException;
-import com.hrSystem.hr.exception.ResourceNotFoundException;
-import com.hrSystem.hr.repository.EmployeeRepository;
-import com.hrSystem.hr.repository.UserRepository;
-import com.hrSystem.hr.security.JwtService;
+
+import com.rh.system.dto.request.LoginRequest;
+import com.rh.system.dto.request.RegisterRequest;
+import com.rh.system.dto.response.AuthResponse;
+import com.rh.system.entity.Employee;
+import com.rh.system.entity.User;
+import com.rh.system.exception.ConflictException;
+import com.rh.system.exception.ResourceNotFoundException;
+import com.rh.system.repository.EmployeeRepository;
+import com.rh.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,8 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository        userRepository;
-    private final EmployeeRepository    employeeRepository;
+    private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
     private final PasswordEncoder       passwordEncoder;
     private final JwtService            jwtService;
     private final AuthenticationManager authenticationManager;
