@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -16,6 +18,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -72,11 +77,29 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        UserDetailsService uds = userDetailsService();
-        provider.setUserDetailsService(uds);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
+        return new AuthenticationProvider() {
+            @Override
+            public Authentication authenticate(Authentication authentication)
+                    throws AuthenticationException {
+                String username = authentication.getName();
+                String password = authentication.getCredentials().toString();
+
+                UserDetails user = userDetailsService().loadUserByUsername(username);
+
+                if (!passwordEncoder().matches(password, user.getPassword())) {
+                    throw new BadCredentialsException("Credenciais inválidas");
+                }
+
+                return new UsernamePasswordAuthenticationToken(
+                        user, null, user.getAuthorities()
+                );
+            }
+
+            @Override
+            public boolean supports(Class<?> authentication) {
+                return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
+            }
+        };
     }
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
