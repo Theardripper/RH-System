@@ -1,7 +1,9 @@
 package com.rh.system.security;
 
-import com.hrSystem.hr.entity.User;
-import com.hrSystem.hr.repository.UserRepository;
+
+import com.rh.system.repository.UserRepository;
+import com.rh.system.service.JwtService;
+import com.rh.system.entity.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,7 +33,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService     jwtService;
+    private final JwtService jwtService;
     private final UserRepository userRepository;
 
     @Override
