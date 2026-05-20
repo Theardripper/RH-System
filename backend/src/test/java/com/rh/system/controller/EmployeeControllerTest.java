@@ -1,16 +1,17 @@
 package com.rh.system.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hrSystem.hr.TestFactory;
-import com.hrSystem.hr.config.SecurityConfig;
-import com.hrSystem.hr.dto.request.EmployeeRequest;
-import com.hrSystem.hr.dto.response.EmployeeResponse;
-import com.hrSystem.hr.dto.response.PageResponse;
-import com.hrSystem.hr.exception.ConflictException;
-import com.hrSystem.hr.exception.ResourceNotFoundException;
-import com.hrSystem.hr.security.JwtAuthenticationFilter;
-import com.hrSystem.hr.security.JwtService;
-import com.hrSystem.hr.service.EmployeeService;
+
+import com.rh.system.TestFactory;
+import com.rh.system.exception.ResourceNotFoundException;
+import com.rh.system.config.SecurityConfig;
+import com.rh.system.dto.request.EmployeeRequest;
+import com.rh.system.dto.response.EmployeeResponse;
+import com.rh.system.dto.response.PageResponse;
+import com.rh.system.exception.ConflictException;
+import com.rh.system.security.JwtAuthenticationFilter;
+import com.rh.system.service.EmployeeService;
+import com.rh.system.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,10 +51,10 @@ class EmployeeControllerTest {
     private JwtService jwtService;
 
     @MockBean
-    private com.hrSystem.hr.repository.UserRepository userRepository;
+    private com.rh.system.repository.UserRepository userRepository;
 
     private EmployeeResponse employeeResponse;
-    private EmployeeRequest  employeeRequest;
+    private EmployeeRequest employeeRequest;
 
     @BeforeEach
     void setUp() {

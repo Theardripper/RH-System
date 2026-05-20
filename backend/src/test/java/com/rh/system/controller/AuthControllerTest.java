@@ -1,22 +1,22 @@
 package com.rh.system.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hrSystem.hr.TestFactory;
-import com.hrSystem.hr.config.SecurityConfig;
-import com.hrSystem.hr.dto.request.LoginRequest;
-import com.hrSystem.hr.dto.response.AuthResponse;
-import com.hrSystem.hr.entity.UserRole;
-import com.hrSystem.hr.exception.ConflictException;
-import com.hrSystem.hr.security.JwtAuthenticationFilter;
-import com.hrSystem.hr.security.JwtService;
-import com.hrSystem.hr.service.AuthService;
+import com.rh.system.TestFactory;
+import com.rh.system.config.SecurityConfig;
+import com.rh.system.dto.request.LoginRequest;
+import com.rh.system.dto.response.AuthResponse;
+import com.rh.system.entity.UserRole;
+import com.rh.system.exception.ConflictException;
+import com.rh.system.security.JwtAuthenticationFilter;
+import com.rh.system.service.AuthService;
+import com.rh.system.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -46,7 +46,7 @@ class AuthControllerTest {
     private JwtService jwtService;
 
     @MockBean
-    private com.hrSystem.hr.repository.UserRepository userRepository;
+    private com.rh.system.repository.UserRepository userRepository;
 
     private AuthResponse authResponse;
 
@@ -123,7 +123,7 @@ class AuthControllerTest {
         void shouldReturn201WhenRegistered() throws Exception {
             when(authService.register(any())).thenReturn(authResponse);
 
-            var request = new com.hrSystem.hr.dto.request.RegisterRequest(
+            var request = new com.rh.system.dto.request.RegisterRequest(
                     "novouser", "novo@hrsystem.com", "Senha@123", UserRole.EMPLOYEE, null
             );
 
@@ -138,7 +138,7 @@ class AuthControllerTest {
         @WithMockUser(roles = "EMPLOYEE")
         @DisplayName("deve retornar 403 para role insuficiente")
         void shouldReturn403ForInsufficientRole() throws Exception {
-            var request = new com.hrSystem.hr.dto.request.RegisterRequest(
+            var request = new com.rh.system.dto.request.RegisterRequest(
                     "novouser", "novo@hrsystem.com", "Senha@123", UserRole.EMPLOYEE, null
             );
 
@@ -155,7 +155,7 @@ class AuthControllerTest {
             when(authService.register(any()))
                     .thenThrow(new ConflictException("Username já está em uso"));
 
-            var request = new com.hrSystem.hr.dto.request.RegisterRequest(
+            var request = new com.rh.system.dto.request.RegisterRequest(
                     "admin", "admin@hrsystem.com", "Senha@123", UserRole.ADMIN, null
             );
 

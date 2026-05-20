@@ -1,10 +1,10 @@
 package com.rh.system;
 
-import com.hrSystem.hr.dto.request.DepartmentRequest;
-import com.hrSystem.hr.dto.request.EmployeeRequest;
-import com.hrSystem.hr.dto.request.LoginRequest;
-import com.hrSystem.hr.dto.request.VacationRequestDto;
-import com.hrSystem.hr.entity.*;
+import com.rh.system.dto.request.DepartmentRequest;
+import com.rh.system.dto.request.EmployeeRequest;
+import com.rh.system.dto.request.LoginRequest;
+import com.rh.system.dto.request.VacationRequestDto;
+import com.rh.system.entity.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
