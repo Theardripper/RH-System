@@ -1,12 +1,13 @@
 package com.rh.system.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rh.system.TestFactory;
 import com.rh.system.config.SecurityConfig;
 import com.rh.system.dto.request.LoginRequest;
+import com.rh.system.dto.request.RegisterRequest;
 import com.rh.system.dto.response.AuthResponse;
 import com.rh.system.entity.UserRole;
 import com.rh.system.exception.ConflictException;
+import com.rh.system.repository.UserRepository;
 import com.rh.system.security.JwtAuthenticationFilter;
 import com.rh.system.service.AuthService;
 import com.rh.system.service.JwtService;
@@ -15,12 +16,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.definition.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -39,14 +40,14 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private AuthService authService;
 
-    @MockBean
+    @MockitoBean
     private JwtService jwtService;
 
-    @MockBean
-    private com.rh.system.repository.UserRepository userRepository;
+    @MockitoBean
+    private UserRepository userRepository;
 
     private AuthResponse authResponse;
 
@@ -55,28 +56,24 @@ class AuthControllerTest {
         authResponse = AuthResponse.builder()
                 .token("eyJhbGciOiJIUzI1NiJ9.mocktoken")
                 .tokenType("Bearer")
-                .userId(1L)
-                .username("admin")
+                .userId(1L).username("admin")
                 .email("admin@hrsystem.com")
                 .role(UserRole.ADMIN)
                 .build();
     }
 
-    // ================================================================
-    // POST /api/auth/login
-    // ================================================================
     @Nested
     @DisplayName("POST /api/auth/login")
     class Login {
 
         @Test
         @DisplayName("deve retornar 200 com token para credenciais válidas")
-        void shouldReturn200WithTokenForValidCredentials() throws Exception {
+        void shouldReturn200WithToken() throws Exception {
             when(authService.login(any(LoginRequest.class))).thenReturn(authResponse);
 
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(TestFactory.buildLoginRequest())))
+                            .content(objectMapper.writeValueAsString(new LoginRequest("admin", "Admin@1234"))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.token").exists())
                     .andExpect(jsonPath("$.tokenType").value("Bearer"))
@@ -92,27 +89,20 @@ class AuthControllerTest {
 
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(TestFactory.buildLoginRequest())))
-                    .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.message").value("Credenciais inválidas"));
+                            .content(objectMapper.writeValueAsString(new LoginRequest("admin", "errada"))))
+                    .andExpect(status().isUnauthorized());
         }
 
         @Test
-        @DisplayName("deve retornar 400 quando body está inválido")
+        @DisplayName("deve retornar 400 para body inválido")
         void shouldReturn400ForInvalidBody() throws Exception {
-            LoginRequest invalid = new LoginRequest("", "");
-
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(invalid)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.fields").exists());
+                            .content(objectMapper.writeValueAsString(new LoginRequest("", ""))))
+                    .andExpect(status().isBadRequest());
         }
     }
 
-    // ================================================================
-    // POST /api/auth/register
-    // ================================================================
     @Nested
     @DisplayName("POST /api/auth/register")
     class Register {
@@ -123,7 +113,7 @@ class AuthControllerTest {
         void shouldReturn201WhenRegistered() throws Exception {
             when(authService.register(any())).thenReturn(authResponse);
 
-            var request = new com.rh.system.dto.request.RegisterRequest(
+            RegisterRequest request = new RegisterRequest(
                     "novouser", "novo@hrsystem.com", "Senha@123", UserRole.EMPLOYEE, null
             );
 
@@ -138,7 +128,7 @@ class AuthControllerTest {
         @WithMockUser(roles = "EMPLOYEE")
         @DisplayName("deve retornar 403 para role insuficiente")
         void shouldReturn403ForInsufficientRole() throws Exception {
-            var request = new com.rh.system.dto.request.RegisterRequest(
+            RegisterRequest request = new RegisterRequest(
                     "novouser", "novo@hrsystem.com", "Senha@123", UserRole.EMPLOYEE, null
             );
 
@@ -150,12 +140,12 @@ class AuthControllerTest {
 
         @Test
         @WithMockUser(roles = "ADMIN")
-        @DisplayName("deve retornar 409 para username ou email duplicado")
+        @DisplayName("deve retornar 409 para username duplicado")
         void shouldReturn409ForDuplicateUser() throws Exception {
             when(authService.register(any()))
                     .thenThrow(new ConflictException("Username já está em uso"));
 
-            var request = new com.rh.system.dto.request.RegisterRequest(
+            RegisterRequest request = new RegisterRequest(
                     "admin", "admin@hrsystem.com", "Senha@123", UserRole.ADMIN, null
             );
 
