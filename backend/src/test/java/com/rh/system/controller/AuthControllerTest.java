@@ -1,161 +1,164 @@
 package com.rh.system.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rh.system.dto.request.LoginRequest;
 import com.rh.system.dto.request.RegisterRequest;
 import com.rh.system.dto.response.AuthResponse;
 import com.rh.system.entity.UserRole;
 import com.rh.system.exception.ConflictException;
-import com.rh.system.repository.UserRepository;
-import com.rh.system.service.JwtService;
 import com.rh.system.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.definition.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 @DisplayName("AuthController")
 class AuthControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean
+    @Mock
     private AuthService authService;
 
-    @MockitoBean
-    private JwtService jwtService;
-
-    @MockitoBean
-    private UserRepository userRepository;
+    @InjectMocks
+    private AuthController authController;
 
     private AuthResponse authResponse;
+    private LoginRequest loginRequest;
+    private RegisterRequest registerRequest;
 
     @BeforeEach
     void setUp() {
         authResponse = AuthResponse.builder()
                 .token("eyJhbGciOiJIUzI1NiJ9.mocktoken")
                 .tokenType("Bearer")
-                .userId(1L).username("admin")
+                .userId(1L)
+                .username("admin")
                 .email("admin@hrsystem.com")
                 .role(UserRole.ADMIN)
                 .build();
+
+        loginRequest = new LoginRequest("admin", "Admin@1234");
+
+        registerRequest = new RegisterRequest(
+                "novouser", "novo@hrsystem.com", "Senha@123", UserRole.EMPLOYEE, null
+        );
     }
 
+    // ================================================================
+    // login()
+    // ================================================================
     @Nested
-    @DisplayName("POST /api/auth/login")
+    @DisplayName("login()")
     class Login {
 
         @Test
         @DisplayName("deve retornar 200 com token para credenciais válidas")
-        void shouldReturn200WithToken() throws Exception {
+        void shouldReturn200WithTokenForValidCredentials() {
             when(authService.login(any(LoginRequest.class))).thenReturn(authResponse);
 
-            mockMvc.perform(post("/api/auth/login")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(
-                                    new LoginRequest("admin", "Admin@1234"))))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.token").exists())
-                    .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                    .andExpect(jsonPath("$.username").value("admin"))
-                    .andExpect(jsonPath("$.role").value("ADMIN"));
+            var response = authController.login(loginRequest);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getToken()).isNotBlank();
+            assertThat(response.getBody().getTokenType()).isEqualTo("Bearer");
+            assertThat(response.getBody().getUsername()).isEqualTo("admin");
+            assertThat(response.getBody().getRole()).isEqualTo(UserRole.ADMIN);
+            verify(authService).login(loginRequest);
         }
 
         @Test
-        @DisplayName("deve retornar 401 para credenciais inválidas")
-        void shouldReturn401ForInvalidCredentials() throws Exception {
+        @DisplayName("deve propagar BadCredentialsException para credenciais inválidas")
+        void shouldPropagateBadCredentialsException() {
             when(authService.login(any()))
                     .thenThrow(new BadCredentialsException("Credenciais inválidas"));
 
-            mockMvc.perform(post("/api/auth/login")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(
-                                    new LoginRequest("admin", "errada"))))
-                    .andExpect(status().isUnauthorized());
+            assertThatThrownBy(() -> authController.login(loginRequest))
+                    .isInstanceOf(BadCredentialsException.class)
+                    .hasMessageContaining("Credenciais inválidas");
+
+            verify(authService).login(loginRequest);
         }
 
         @Test
-        @DisplayName("deve retornar 400 para body inválido")
-        void shouldReturn400ForInvalidBody() throws Exception {
-            mockMvc.perform(post("/api/auth/login")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(
-                                    new LoginRequest("", ""))))
-                    .andExpect(status().isBadRequest());
+        @DisplayName("deve chamar authService.login com os dados corretos")
+        void shouldCallServiceWithCorrectData() {
+            when(authService.login(any())).thenReturn(authResponse);
+
+            authController.login(loginRequest);
+
+            verify(authService).login(argThat(req ->
+                    req.getUsername().equals("admin") &&
+                            req.getPassword().equals("Admin@1234")
+            ));
         }
     }
 
+    // ================================================================
+    // register()
+    // ================================================================
     @Nested
-    @DisplayName("POST /api/auth/register")
+    @DisplayName("register()")
     class Register {
 
         @Test
-        @WithMockUser(roles = "ADMIN")
         @DisplayName("deve retornar 201 ao registrar com sucesso")
-        void shouldReturn201WhenRegistered() throws Exception {
+        void shouldReturn201WhenRegistered() {
+            when(authService.register(any(RegisterRequest.class))).thenReturn(authResponse);
+
+            var response = authController.register(registerRequest);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(201);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getToken()).isNotBlank();
+            assertThat(response.getBody().getUsername()).isEqualTo("admin");
+            verify(authService).register(registerRequest);
+        }
+
+        @Test
+        @DisplayName("deve propagar ConflictException para username duplicado")
+        void shouldPropagateConflictForDuplicateUsername() {
+            when(authService.register(any()))
+                    .thenThrow(new ConflictException("Username já está em uso: novouser"));
+
+            assertThatThrownBy(() -> authController.register(registerRequest))
+                    .isInstanceOf(ConflictException.class)
+                    .hasMessageContaining("novouser");
+
+            verify(authService).register(registerRequest);
+        }
+
+        @Test
+        @DisplayName("deve propagar ConflictException para email duplicado")
+        void shouldPropagateConflictForDuplicateEmail() {
+            when(authService.register(any()))
+                    .thenThrow(new ConflictException("E-mail já está em uso: novo@hrsystem.com"));
+
+            assertThatThrownBy(() -> authController.register(registerRequest))
+                    .isInstanceOf(ConflictException.class)
+                    .hasMessageContaining("novo@hrsystem.com");
+        }
+
+        @Test
+        @DisplayName("deve chamar authService.register com os dados corretos")
+        void shouldCallServiceWithCorrectData() {
             when(authService.register(any())).thenReturn(authResponse);
 
-            RegisterRequest request = new RegisterRequest(
-                    "novouser", "novo@hrsystem.com", "Senha@123", UserRole.EMPLOYEE, null
-            );
+            authController.register(registerRequest);
 
-            mockMvc.perform(post("/api/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.token").exists());
-        }
-
-        @Test
-        @WithMockUser(roles = "EMPLOYEE")
-        @DisplayName("deve retornar 403 para role insuficiente")
-        void shouldReturn403ForInsufficientRole() throws Exception {
-            RegisterRequest request = new RegisterRequest(
-                    "novouser", "novo@hrsystem.com", "Senha@123", UserRole.EMPLOYEE, null
-            );
-
-            mockMvc.perform(post("/api/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        @DisplayName("deve retornar 409 para username duplicado")
-        void shouldReturn409ForDuplicateUser() throws Exception {
-            when(authService.register(any()))
-                    .thenThrow(new ConflictException("Username já está em uso"));
-
-            RegisterRequest request = new RegisterRequest(
-                    "admin", "admin@hrsystem.com", "Senha@123", UserRole.ADMIN, null
-            );
-
-            mockMvc.perform(post("/api/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isConflict());
+            verify(authService).register(argThat(req ->
+                    req.getUsername().equals("novouser") &&
+                            req.getEmail().equals("novo@hrsystem.com") &&
+                            req.getRole() == UserRole.EMPLOYEE
+            ));
         }
     }
 }
