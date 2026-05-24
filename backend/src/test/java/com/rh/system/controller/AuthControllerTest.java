@@ -1,26 +1,25 @@
 package com.rh.system.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rh.system.config.SecurityConfig;
 import com.rh.system.dto.request.LoginRequest;
 import com.rh.system.dto.request.RegisterRequest;
 import com.rh.system.dto.response.AuthResponse;
 import com.rh.system.entity.UserRole;
 import com.rh.system.exception.ConflictException;
 import com.rh.system.repository.UserRepository;
-import com.rh.system.security.JwtAuthenticationFilter;
-import com.rh.system.service.AuthService;
 import com.rh.system.service.JwtService;
+import com.rh.system.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.definition.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,8 +28,9 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 @DisplayName("AuthController")
 class AuthControllerTest {
 
@@ -73,7 +73,8 @@ class AuthControllerTest {
 
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(new LoginRequest("admin", "Admin@1234"))))
+                            .content(objectMapper.writeValueAsString(
+                                    new LoginRequest("admin", "Admin@1234"))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.token").exists())
                     .andExpect(jsonPath("$.tokenType").value("Bearer"))
@@ -89,7 +90,8 @@ class AuthControllerTest {
 
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(new LoginRequest("admin", "errada"))))
+                            .content(objectMapper.writeValueAsString(
+                                    new LoginRequest("admin", "errada"))))
                     .andExpect(status().isUnauthorized());
         }
 
@@ -98,7 +100,8 @@ class AuthControllerTest {
         void shouldReturn400ForInvalidBody() throws Exception {
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(new LoginRequest("", ""))))
+                            .content(objectMapper.writeValueAsString(
+                                    new LoginRequest("", ""))))
                     .andExpect(status().isBadRequest());
         }
     }

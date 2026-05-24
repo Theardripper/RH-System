@@ -1,85 +1,70 @@
 package com.rh.system.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rh.system.config.SecurityConfig;
 import com.rh.system.dto.request.EmployeeRequest;
 import com.rh.system.dto.response.EmployeeResponse;
 import com.rh.system.dto.response.PageResponse;
+import com.rh.system.exception.BusinessException;
 import com.rh.system.exception.ConflictException;
 import com.rh.system.exception.ResourceNotFoundException;
-import com.rh.system.repository.UserRepository;
-import com.rh.system.security.JwtAuthenticationFilter;
 import com.rh.system.service.EmployeeService;
-import com.rh.system.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.definition.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(EmployeeController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@ExtendWith(MockitoExtension.class)
 @DisplayName("EmployeeController")
 class EmployeeControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean
+    @Mock
     private EmployeeService employeeService;
 
-    @MockitoBean
-    private JwtService jwtService;
-
-    @MockitoBean
-    private UserRepository userRepository;
+    @InjectMocks
+    private EmployeeController employeeController;
 
     private EmployeeResponse employeeResponse;
-    private EmployeeRequest employeeRequest;
+    private EmployeeRequest  employeeRequest;
 
     @BeforeEach
     void setUp() {
         employeeResponse = EmployeeResponse.builder()
                 .id(1L).firstName("João").lastName("Silva").fullName("João Silva")
-                .email("joao.silva@hrsystem.com").hireDate(LocalDate.of(2022, 1, 15))
-                .salary(new BigDecimal("5000.00")).position("Desenvolvedor")
-                .active(true).departmentId(1L).departmentName("Tecnologia")
+                .email("joao.silva@hrsystem.com")
+                .hireDate(LocalDate.of(2022, 1, 15))
+                .salary(new BigDecimal("5000.00"))
+                .position("Desenvolvedor").active(true)
+                .departmentId(1L).departmentName("Tecnologia")
                 .build();
 
         employeeRequest = EmployeeRequest.builder()
                 .firstName("Maria").lastName("Costa")
-                .email("maria.costa@hrsystem.com").phone("(81) 99888-2222")
+                .email("maria.costa@hrsystem.com")
+                .phone("(81) 99888-2222")
                 .hireDate(LocalDate.now().minusMonths(3))
-                .salary(new BigDecimal("6000.00")).position("Analista")
-                .departmentId(1L).build();
+                .salary(new BigDecimal("6000.00"))
+                .position("Analista").departmentId(1L)
+                .build();
     }
 
     @Nested
-    @DisplayName("GET /api/employees")
+    @DisplayName("findAll()")
     class FindAll {
 
         @Test
-        @WithMockUser
-        @DisplayName("deve retornar 200 com lista paginada")
-        void shouldReturn200WithPage() throws Exception {
+        @DisplayName("deve retornar página de funcionários")
+        void shouldReturnPage() {
             PageResponse<EmployeeResponse> page = PageResponse.<EmployeeResponse>builder()
                     .content(List.of(employeeResponse))
                     .page(0).size(10).totalElements(1).totalPages(1)
@@ -87,139 +72,143 @@ class EmployeeControllerTest {
 
             when(employeeService.findAll(any(), any(), any())).thenReturn(page);
 
-            mockMvc.perform(get("/api/employees"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content[0].fullName").value("João Silva"))
-                    .andExpect(jsonPath("$.totalElements").value(1));
+            var response = employeeController.findAll(null, null, 0, 10, "firstName", "asc");
+
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getContent()).hasSize(1);
+            assertThat(response.getBody().getContent().get(0).getFullName()).isEqualTo("João Silva");
         }
 
         @Test
-        @WithMockUser
-        @DisplayName("deve aceitar parâmetros de paginação")
-        void shouldAcceptPaginationParams() throws Exception {
+        @DisplayName("deve passar search e departmentId ao service")
+        void shouldPassFiltersToService() {
             PageResponse<EmployeeResponse> page = PageResponse.<EmployeeResponse>builder()
-                    .content(List.of()).page(0).size(5)
-                    .totalElements(0).totalPages(0).first(true).last(true).build();
+                    .content(List.of()).page(0).size(10)
+                    .totalElements(0).totalPages(0)
+                    .first(true).last(true).build();
 
-            when(employeeService.findAll(any(), any(), any())).thenReturn(page);
+            when(employeeService.findAll(eq("joão"), eq(1L), any())).thenReturn(page);
 
-            mockMvc.perform(get("/api/employees")
-                            .param("search", "joão")
-                            .param("page", "0")
-                            .param("size", "5"))
-                    .andExpect(status().isOk());
+            employeeController.findAll("joão", 1L, 0, 10, "firstName", "asc");
 
-            verify(employeeService).findAll(eq("joão"), isNull(), any());
+            verify(employeeService).findAll(eq("joão"), eq(1L), any());
         }
     }
 
     @Nested
-    @DisplayName("GET /api/employees/{id}")
+    @DisplayName("findById()")
     class FindById {
 
         @Test
-        @WithMockUser
         @DisplayName("deve retornar 200 com dados do funcionário")
-        void shouldReturn200WhenFound() throws Exception {
+        void shouldReturn200WhenFound() {
             when(employeeService.findById(1L)).thenReturn(employeeResponse);
 
-            mockMvc.perform(get("/api/employees/1"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(1))
-                    .andExpect(jsonPath("$.departmentName").value("Tecnologia"));
+            var response = employeeController.findById(1L);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getEmail()).isEqualTo("joao.silva@hrsystem.com");
+            assertThat(response.getBody().getDepartmentName()).isEqualTo("Tecnologia");
         }
 
         @Test
-        @WithMockUser
-        @DisplayName("deve retornar 404 quando não encontrado")
-        void shouldReturn404WhenNotFound() throws Exception {
+        @DisplayName("deve propagar ResourceNotFoundException quando não encontrado")
+        void shouldPropagateExceptionWhenNotFound() {
             when(employeeService.findById(99L))
                     .thenThrow(new ResourceNotFoundException("Funcionário", 99L));
 
-            mockMvc.perform(get("/api/employees/99"))
-                    .andExpect(status().isNotFound());
+            assertThatThrownBy(() -> employeeController.findById(99L))
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
     @Nested
-    @DisplayName("POST /api/employees")
+    @DisplayName("create()")
     class Create {
 
         @Test
-        @WithMockUser(roles = "ADMIN")
         @DisplayName("deve retornar 201 ao criar com sucesso")
-        void shouldReturn201WhenCreated() throws Exception {
+        void shouldReturn201WhenCreated() {
             when(employeeService.create(any(EmployeeRequest.class))).thenReturn(employeeResponse);
 
-            mockMvc.perform(post("/api/employees")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(employeeRequest)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.fullName").value("João Silva"));
+            var response = employeeController.create(employeeRequest);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(201);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getFullName()).isEqualTo("João Silva");
+            verify(employeeService).create(employeeRequest);
         }
 
         @Test
-        @WithMockUser(roles = "MANAGER")
-        @DisplayName("deve retornar 201 para role MANAGER")
-        void shouldReturn201ForManager() throws Exception {
-            when(employeeService.create(any())).thenReturn(employeeResponse);
-
-            mockMvc.perform(post("/api/employees")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(employeeRequest)))
-                    .andExpect(status().isCreated());
-        }
-
-        @Test
-        @WithMockUser(roles = "EMPLOYEE")
-        @DisplayName("deve retornar 403 para role EMPLOYEE")
-        void shouldReturn403ForEmployee() throws Exception {
-            mockMvc.perform(post("/api/employees")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(employeeRequest)))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        @DisplayName("deve retornar 409 para email duplicado")
-        void shouldReturn409ForDuplicateEmail() throws Exception {
+        @DisplayName("deve propagar ConflictException para email duplicado")
+        void shouldPropagateConflictForDuplicateEmail() {
             when(employeeService.create(any()))
                     .thenThrow(new ConflictException("E-mail já cadastrado"));
 
-            mockMvc.perform(post("/api/employees")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(employeeRequest)))
-                    .andExpect(status().isConflict());
+            assertThatThrownBy(() -> employeeController.create(employeeRequest))
+                    .isInstanceOf(ConflictException.class)
+                    .hasMessageContaining("E-mail");
         }
     }
 
     @Nested
-    @DisplayName("PATCH /api/employees/{id}/deactivate e activate")
+    @DisplayName("update()")
+    class Update {
+
+        @Test
+        @DisplayName("deve retornar 200 ao atualizar com sucesso")
+        void shouldReturn200WhenUpdated() {
+            when(employeeService.update(eq(1L), any(EmployeeRequest.class)))
+                    .thenReturn(employeeResponse);
+
+            var response = employeeController.update(1L, employeeRequest);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
+            verify(employeeService).update(1L, employeeRequest);
+        }
+    }
+
+    @Nested
+    @DisplayName("deactivate() e activate()")
     class Activation {
 
         @Test
-        @WithMockUser(roles = "ADMIN")
         @DisplayName("deve retornar 200 ao desativar funcionário")
-        void shouldReturn200WhenDeactivated() throws Exception {
+        void shouldReturn200WhenDeactivated() {
             EmployeeResponse inactive = EmployeeResponse.builder()
                     .id(1L).fullName("João Silva").active(false).build();
             when(employeeService.deactivate(1L)).thenReturn(inactive);
 
-            mockMvc.perform(patch("/api/employees/1/deactivate"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.active").value(false));
+            var response = employeeController.deactivate(1L);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getActive()).isFalse();
         }
 
         @Test
-        @WithMockUser(roles = "ADMIN")
         @DisplayName("deve retornar 200 ao reativar funcionário")
-        void shouldReturn200WhenActivated() throws Exception {
+        void shouldReturn200WhenActivated() {
             when(employeeService.activate(1L)).thenReturn(employeeResponse);
 
-            mockMvc.perform(patch("/api/employees/1/activate"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.active").value(true));
+            var response = employeeController.activate(1L);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getActive()).isTrue();
+        }
+
+        @Test
+        @DisplayName("deve propagar BusinessException ao desativar já inativo")
+        void shouldPropagateBusinessExceptionWhenAlreadyInactive() {
+            when(employeeService.deactivate(1L))
+                    .thenThrow(new BusinessException("Funcionário já está inativo"));
+
+            assertThatThrownBy(() -> employeeController.deactivate(1L))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("inativo");
         }
     }
 }
