@@ -29,6 +29,21 @@ API REST completa para gestão de Recursos Humanos, desenvolvida com Java 21, Sp
 - Documentação completa dos endpoints via Swagger UI
 
 ---
+### Página de Login
+![1.png](../img/1.png)
+
+
+### Home
+![2.png](../img/2.png)
+
+### Funcionários
+![3.png](../img/3.png)
+
+### Departamentos
+![4.png](../img/4.png)
+
+### Solicitações de férias
+![5.png](../img/5.png)
 
 ## Estrutura do Projeto
 
