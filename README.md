@@ -7,16 +7,19 @@ Sistema completo de RH desenvolvido como projeto de portfólio, com backend em J
 ## Screenshots
 
 ### Login
-![alt text](Screenshot_2026-06-10_18-36-52.png)
+![1.png](img/1.png)
 
 ### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
+![2.png](img/2.png)
 
 ### Funcionários
-![Funcionários](docs/screenshots/employees.png)
+![3.png](img/3.png)
+
+### Departamento
+![4.png](img/4.png)
 
 ### Férias
-![Férias](docs/screenshots/vacations.png)
+![4.png](img/4.png)
 
 ---
 
